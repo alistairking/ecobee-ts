@@ -1,4 +1,4 @@
-# ecobee-ts
+# EcobeeTS
 Scripts to poll an Ecobee thermostat and write time series to a DB
 
 ## Getting Started
@@ -15,6 +15,19 @@ ecobeets-setup --api-key=<mysecretkey>
 
 3. Follow the prompts to associate your application with your thermostat and 
 obtain authorization tokens.
+
+## Real-time monitoring
+
+Use the `ecobeets-monitor` tool to continuously monitor your thermostat(s)
+and generate time series.
+
+Note that you must first have run followed the setup instructions above.
+
+```
+ecobeets-monitor -c 1
+```
+
+TODO: add examples of continous monitoring (including to InfluxDB)
 
 ## Known Issues
 

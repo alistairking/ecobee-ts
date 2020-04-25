@@ -47,7 +47,8 @@ def main():
     opts = vars(parser.parse_args())
     api_key = opts['api_key']
 
-    api = common.ApiHelper(token_file=opts['token_file'])
+    api = common.ApiHelper(token_file=opts['token_file'],
+                           skip_validation=True)
 
     if os.path.isfile(api.token_file):
         print("ERROR: token file '%s' exists. Remove to force "
