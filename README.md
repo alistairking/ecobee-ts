@@ -19,6 +19,7 @@ obtain authorization tokens.
 ## Known Issues
 
 - There doesn't seem to be any way to obtain tokens for an application that has
- already been registered. It's annoying, but removing the application and 
- re-running ecobeets-setup seems to be the only option if your refresh token 
- expires (or you lose your `~/.ecobeets` config file).
+ already been registered. It's annoying, but re-running `ecobeets-setup` 
+ seems to be the only option if your refresh token expires (or you lose your
+  `~/.ecobeets` config file). Note that you can re-add the same application
+  without removing the previous instance (it will be overwritten).

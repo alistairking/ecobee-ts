@@ -6,21 +6,13 @@ import sys
 import ecobeets.common as common
 
 
-def check_error_resp(resp):
-    if 'error' in resp:
-        print("ERROR: %s" % resp['error_description'])
-        sys.exit(-1)
-
-
-def register_app(api_key):
+def register_app(api, api_key):
     print("Creating application registration PIN...")
-    r = requests.get(common.ECOBEE_API + '/authorize', params={
+    auth_resp = api.request('authorize', params={
         'response_type': 'ecobeePin',
         'client_id': api_key,
         'scope': 'smartRead',
     })
-    auth_resp = r.json()
-    check_error_resp(auth_resp)
 
     print("PIN created successfully: '%s'" % auth_resp['ecobeePin'])
     print("Go to https://www.ecobee.com/consumerportal/index.html")
@@ -30,22 +22,13 @@ def register_app(api_key):
     return auth_resp['code']
 
 
-def get_tokens(api_key, code):
+def get_initial_tokens(api, api_key, code):
     print("Requesting access and refresh tokens...")
-    r = requests.post(common.ECOBEE_API + '/token', params={
+    return api.request('token', params={
         'grant_type': 'ecobeePin',
         'client_id': api_key,
         'code': code,
-    })
-    token_resp = r.json()
-    check_error_resp(token_resp)
-    return token_resp
-
-
-def write_tokens(token_file, tokens):
-    print("Writing access and refresh tokens to '%s'" % token_file)
-    with open(token_file, 'w') as fh:
-        fh.write(json.dumps(tokens))
+    }, method='post')
 
 
 def main():
@@ -58,22 +41,27 @@ def main():
                         help="Ecobee API Key")
 
     parser.add_argument('-t', '--token-file', required=False,
-                        default="~/.ecobeets",
+                        default=common.ECOBEETS_CONFIG,
                         help="File to store access tokens in")
 
     opts = vars(parser.parse_args())
     api_key = opts['api_key']
-    token_file = os.path.expanduser(opts['token_file'])
 
-    if os.path.isfile(token_file):
+    api = common.ApiHelper(token_file=opts['token_file'])
+
+    if os.path.isfile(api.token_file):
         print("ERROR: token file '%s' exists. Remove to force "
-              "re-authorization." % token_file)
+              "re-authorization." % api.token_file)
         sys.exit(1)
 
     print("Welcome to EcobeeTS Setup")
-    code = register_app(api_key)
-    tokens = get_tokens(api_key, code)
-    write_tokens(token_file, tokens)
+    code = register_app(api, api_key)
+    # we're kinda abusing the ApiHelper here, but we have to bootstrap things
+    api.tokens = get_initial_tokens(api, api_key, code)
+    api.tokens['api_key'] = api_key
+    print("Writing access and refresh tokens to '%s'" % api.token_file)
+    api.write_tokens()
 
     print("Done! You can now use the ecobeets tools.")
-    print("E.g., try 'ecobeets-monitor --token-file=\"%s\" -c 1" % token_file)
+    print("E.g., try 'ecobeets-monitor --token-file=\"%s\" -c 1" %
+          api.token_file)
