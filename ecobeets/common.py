@@ -1,0 +1,1 @@
+ECOBEE_API = "https://api.ecobee.com"
