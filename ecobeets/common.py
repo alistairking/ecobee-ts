@@ -64,7 +64,6 @@ class ApiHelper:
         if 'error' in resp:
             raise ValueError(resp['error_description'])
         if 'status' in resp and resp['status']['code']:
-            sys.stderr.write("WARN: non-zero status code: %s\n" % resp[
+            raise ValueError("Non-zero status code: %s" % resp[
                 'status']['message'])
-            return None
         return resp

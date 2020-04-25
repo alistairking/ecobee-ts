@@ -16,31 +16,36 @@ class Monitor:
         self.forever = count is None
         self.interval = interval
 
-    def get_current_status(self):
+    def get_thermostats(self):
         body = {
             "selection": {
                 "selectionType": "registered",
                 "selectionMatch": "",
                 "includeRuntime": True,
-                "includeEquipmentStatus": True,
-                "includeWeather": True,
-                "includeSensors": True,
                 "includeExtendedRuntime": True,
-                "includeDevice": True,
-                "includeEvents": True,
-                "includeProgram": True
+                "includeEquipmentStatus": True,
+                "includeSensors": True,
+
+                # TODO: figure out which of these are useful and create parsers
+                "includeEvents": False,
+                "includeDevice": False,
+                "includeWeather": False,
+                "includeProgram": False,
             }
         }
-        return self.api.request('1/thermostat', params={
+        resp = self.api.request('1/thermostat', params={
             "format": "json",
             "body": json.dumps(body),
         }, method='get', auth_needed=True)
+        if 'page' in resp and resp['page']['totalPages'] != 1:
+            raise NotImplementedError("Multi-page responses are not yet "
+                                      "handled.")
+        return resp['thermostatList']
 
     def run(self):
         while self.forever or self.count:
-            status = self.get_current_status()
-            # NOTE: status can be None if there is a failure
-            print(json.dumps(status))
+            thermostats = self.get_thermostats()
+            print(json.dumps(thermostats))
 
             if self.count:
                 self.count -= 1
