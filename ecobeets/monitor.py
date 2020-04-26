@@ -24,10 +24,10 @@ class Monitor:
                 "selectionMatch": "",
                 "includeRuntime": True,
                 "includeExtendedRuntime": True,
-                "includeEquipmentStatus": True,
                 "includeSensors": True,
 
                 # TODO: figure out which of these are useful and create parsers
+                "includeEquipmentStatus": False,
                 "includeEvents": False,
                 "includeDevice": False,
                 "includeWeather": False,
@@ -48,7 +48,7 @@ class Monitor:
             # TODO: use thermostatSummary to figure out what has changed
             for td in self.get_thermostats():
                 therm = parsers.Thermostat(td)
-                print(therm.points)
+                print(json.dumps(therm.points, default=str))
 
             if self.count:
                 self.count -= 1
