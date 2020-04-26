@@ -2,6 +2,7 @@ import argparse
 import json
 import time
 import ecobeets.common as common
+import ecobeets.parsers as parsers
 
 
 # TODO: use the thermostatSummary API to figure out if anything has changed
@@ -44,8 +45,10 @@ class Monitor:
 
     def run(self):
         while self.forever or self.count:
-            thermostats = self.get_thermostats()
-            print(json.dumps(thermostats))
+            # TODO: use thermostatSummary to figure out what has changed
+            for td in self.get_thermostats():
+                therm = parsers.Thermostat(td)
+                print(therm.points)
 
             if self.count:
                 self.count -= 1
