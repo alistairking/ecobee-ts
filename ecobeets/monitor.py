@@ -11,11 +11,12 @@ import ecobeets.parsers as parsers
 
 class Monitor:
 
-    def __init__(self, api, count, interval):
-        self.api = api
+    def __init__(self, token_file, count, interval, output_type):
+        self.api = common.ApiHelper(token_file)
         self.count = count
         self.forever = count is None
         self.interval = interval
+        self.outtype = output_type
 
     def get_thermostats(self):
         body = {
@@ -48,7 +49,11 @@ class Monitor:
             # TODO: use thermostatSummary to figure out what has changed
             for td in self.get_thermostats():
                 therm = parsers.Thermostat(td)
-                print(json.dumps(therm.points, default=str))
+                if self.outtype == "json":
+                    print(json.dumps(therm.points, default=str))
+                else:
+                    assert(self.outtype == "influxdb")
+                    raise NotImplementedError("TODO Influxdb")
 
             if self.count:
                 self.count -= 1
@@ -61,6 +66,10 @@ def main():
     Polls the Ecobee API to get information about the current state of
     configured thermostats.
     """)
+
+    parser.add_argument('-o', '--output-type', required=False,
+                        default="json", choices=["json", "influxdb"],
+                        help="Output format")
 
     parser.add_argument('-t', '--token-file', required=False,
                         default=common.ECOBEETS_CONFIG,
@@ -75,7 +84,5 @@ def main():
                         help="Data collection interval in seconds")
 
     opts = vars(parser.parse_args())
-    api = common.ApiHelper(token_file=opts['token_file'])
-
-    monitor = Monitor(api=api, count=opts['count'], interval=opts['interval'])
+    monitor = Monitor(**opts)
     monitor.run()
