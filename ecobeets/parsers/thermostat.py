@@ -76,7 +76,8 @@ class Thermostat:
             fields={
                 'config_mod_delta': self.compute_delta(api_data['lastModified'])
             },
-            time=self.utc_time)
+            time=self.utc_time
+        )
 
         # parse sub-objects
         if 'runTime' in api_data:
@@ -250,5 +251,52 @@ class Thermostat:
                 time=ts
             )
 
-    def parse_remote_sensors(self, es):
-        pass
+    def parse_remote_sensors(self, sensors):
+        """
+        Parses remote sensor data
+
+        [
+          {
+            "id": "ei:0",
+            "name": "KingTemp",
+            "type": "thermostat",
+            "inUse": true,
+            "capability": [
+              {
+                "id": "1",
+                "type": "temperature",
+                "value": "780"
+              },
+              {
+                "id": "2",
+                "type": "humidity",
+                "value": "50"
+              }
+            ]
+          }
+        ]
+        """
+        for sensor in sensors:
+            tags = {
+                'sensor_id': sensor['id'],
+                'sensor_name': sensor['name'],
+                'sensor_type': sensor['type'],
+                'sensor_in_use': sensor['inUse']
+            }
+            for cap in sensor['capability']:
+                tags['capability_id'] = cap['id']
+                type = cap['type']
+                val = cap['value']
+                if type == "temperature":
+                    val = int(val)/10
+                elif type == "humidity":
+                    val = int(val)
+                else:
+                    raise NotImplementedError("Capability %s not supported" %
+                                              type)
+                self.add_point(
+                    measurement='thermostat_sensors',
+                    tags=tags,
+                    fields={type: val},
+                    time=self.utc_time
+                )
