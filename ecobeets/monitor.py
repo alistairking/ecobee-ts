@@ -2,10 +2,13 @@ import argparse
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 import json
+import logging
 import time
 import ecobeets.common as common
 import ecobeets.parsers as parsers
 
+# TODO: better logging setup etc.
+logging.getLogger().setLevel("INFO")
 
 # TODO: use the thermostatSummary API to figure out if anything has changed
 # since we last polled.
@@ -63,6 +66,7 @@ class Monitor:
 
     def run(self):
         while self.forever or self.count:
+            logging.info("Polling thermostat API")
             # TODO: use thermostatSummary to figure out what has changed
             for td in self.get_thermostats():
                 therm = parsers.Thermostat(td)
