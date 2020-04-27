@@ -1,4 +1,6 @@
 import argparse
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 import json
 import time
 import ecobeets.common as common
@@ -11,12 +13,27 @@ import ecobeets.parsers as parsers
 
 class Monitor:
 
-    def __init__(self, token_file, count, interval, output_type):
+    def __init__(self, token_file, count, interval, output_type,
+                 influx_url, influx_token, influx_org, influx_bucket):
         self.api = common.ApiHelper(token_file)
         self.count = count
         self.forever = count is None
         self.interval = interval
         self.outtype = output_type
+        if output_type == "influxdb":
+            # init influx client
+            self.influx = InfluxDBClient(
+                url=influx_url,
+                token=influx_token,
+                org=influx_org
+            )
+            self.influx_writer = \
+                self.influx.write_api(write_options=SYNCHRONOUS)
+            self.influx_org = influx_org
+            self.influx_bucket = influx_bucket
+
+    def influx_write(self, data):
+        self.influx_writer.write(self.influx_bucket, self.influx_org, data)
 
     def get_thermostats(self):
         body = {
@@ -53,12 +70,14 @@ class Monitor:
                     print(json.dumps(therm.points, default=str))
                 else:
                     assert(self.outtype == "influxdb")
-                    raise NotImplementedError("TODO Influxdb")
+                    self.influx_write(therm.points)
 
             if self.count:
                 self.count -= 1
             if self.forever or self.count:
                 time.sleep(self.interval)
+        self.influx_writer.__del__()
+        self.influx.__del__()
 
 
 def main():
@@ -82,6 +101,19 @@ def main():
     parser.add_argument('-i', '--interval', required=False,
                         default=300, type=int,
                         help="Data collection interval in seconds")
+
+    parser.add_argument('-u', '--influx-url', required=False,
+                        default="http://localhost:9999",
+                        help="InfluxDB Url")
+
+    parser.add_argument('-k', '--influx-token', required=False,
+                        help="InfluxDB Token")
+
+    parser.add_argument('-r', '--influx-org', required=False,
+                        help="InfluxDB Org")
+
+    parser.add_argument('-b', '--influx-bucket', required=False,
+                        help="InfluxDB Bucket")
 
     opts = vars(parser.parse_args())
     monitor = Monitor(**opts)
