@@ -291,6 +291,8 @@ class Thermostat:
                     val = int(val)/10
                 elif type == "humidity":
                     val = int(val)
+                elif type == "occupancy":
+                    val = (val == "true")
                 else:
                     raise NotImplementedError("Capability %s not supported" %
                                               type)
